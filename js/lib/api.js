@@ -15,12 +15,21 @@ export const MARINE_HOURLY = [
   'wind_wave_height', 'wind_wave_direction', 'wind_wave_period',
   'sea_level_height_msl', 'sea_surface_temperature',
 ];
+// Le modèle marin par défaut (Météo-France MFWAM) s'arrête vers 9-10 jours. Pour couvrir
+// les 15 jours, la houle des heures manquantes vient du modèle NOAA GFS-Wave (16 jours).
+export const EXT_MODEL = 'ncep_gfswave025';
+export const EXT_HOURLY = [
+  'wave_height', 'wave_direction', 'wave_period',
+  'swell_wave_height', 'swell_wave_direction', 'swell_wave_period', 'swell_wave_peak_period',
+  'wind_wave_height', 'wind_wave_direction', 'wind_wave_period',
+];
 export const WEATHER_HOURLY = ['wind_speed_10m', 'wind_direction_10m', 'wind_gusts_10m', 'temperature_2m', 'weather_code'];
 export const WEATHER_DAILY = ['sunrise', 'sunset'];
 
 const BATCH_SIZE = 25;
 const CONCURRENCY = 4;
 const CACHE_NAME = 'surfsite-forecast-v1';
+const TIMEOUT_MS = 15_000;
 export const MAX_AGE_MS = 45 * 60 * 1000;
 
 export class ApiError extends Error {
@@ -65,6 +74,17 @@ function marineParams(days) {
   };
 }
 
+function extendedParams() {
+  return {
+    hourly: EXT_HOURLY.join(','),
+    models: EXT_MODEL,
+    timezone: TZ,
+    timeformat: 'unixtime',
+    forecast_days: FORECAST_DAYS,
+    cell_selection: 'sea',
+  };
+}
+
 async function openCache() {
   try {
     if (typeof caches === 'undefined') return null;
@@ -90,6 +110,27 @@ async function readCache(cache, url) {
   }
 }
 
+/** fetch avec délai maximal : une connexion qui pend ne doit pas bloquer la page. */
+async function fetchWithTimeout(url) {
+  const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = ctrl ? setTimeout(() => ctrl.abort(), TIMEOUT_MS) : null;
+  try {
+    return await fetch(url, ctrl ? { signal: ctrl.signal } : undefined);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/** Une coupure réseau ou un délai dépassé : on retente une fois. */
+async function download(url) {
+  try {
+    return await fetchWithTimeout(url);
+  } catch {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    return fetchWithTimeout(url);
+  }
+}
+
 async function fetchJson(url, cache, force) {
   const cached = await readCache(cache, url);
   const now = Date.now();
@@ -97,7 +138,7 @@ async function fetchJson(url, cache, force) {
     return { ...cached, fromCache: true };
   }
   try {
-    const res = await fetch(url);
+    const res = await download(url);
     const text = await res.text();
     let data = null;
     try {
@@ -140,13 +181,14 @@ const asList = (data) => (Array.isArray(data) ? data : [data]);
 
 /**
  * Télécharge les prévisions de tous les spots.
- * Renvoie { weather: Map(id → réponse), marine: Map(id → réponse), fetchedAt, stale, errors, marineDays }.
+ * Renvoie { weather, marine, extended : Map(id → réponse), fetchedAt, stale, errors, marineDays }.
  */
 export async function fetchForecasts(spots, { force = false, onProgress } = {}) {
   const cache = await openCache();
   const groups = chunk(spots, BATCH_SIZE);
   let marineDays = FORECAST_DAYS;
-  const total = groups.length * 2;
+  const KINDS = ['weather', 'marine', 'extended'];
+  const total = groups.length * KINDS.length;
   let done = 0;
   const tick = () => onProgress?.(++done, total);
 
@@ -165,22 +207,20 @@ export async function fetchForecasts(spots, { force = false, onProgress } = {}) 
     }
   };
   const weatherTask = (g) => () => fetchJson(buildUrl(WEATHER_URL, g, weatherParams()), cache, force);
+  const extendedTask = (g) => () => fetchJson(buildUrl(MARINE_URL, g, extendedParams()), cache, force);
 
   const tasks = [];
-  for (const g of groups) {
-    tasks.push(weatherTask(g));
-    tasks.push(marineTask(g));
-  }
+  for (const g of groups) tasks.push(weatherTask(g), marineTask(g), extendedTask(g));
   const results = await runPool(tasks, CONCURRENCY, tick);
 
-  const weather = new Map();
-  const marine = new Map();
+  const maps = { weather: new Map(), marine: new Map(), extended: new Map() };
+  const { weather, marine, extended } = maps;
   const errors = [];
   let fetchedAt = Infinity;
   let stale = false;
   results.forEach((r, k) => {
-    const g = groups[Math.floor(k / 2)];
-    const kind = k % 2 === 0 ? 'weather' : 'marine';
+    const g = groups[Math.floor(k / KINDS.length)];
+    const kind = KINDS[k % KINDS.length];
     if (!r.ok) {
       errors.push({ kind, error: r.error });
       return;
@@ -190,13 +230,13 @@ export async function fetchForecasts(spots, { force = false, onProgress } = {}) 
     stale = stale || Boolean(s);
     const list = asList(data);
     g.forEach((spot, i) => {
-      if (list[i]) (kind === 'weather' ? weather : marine).set(spot.id, list[i]);
+      if (list[i]) maps[kind].set(spot.id, list[i]);
     });
   });
 
-  if (!weather.size && !marine.size) {
+  if (!weather.size && !marine.size && !extended.size) {
     const first = errors[0]?.error;
     throw first instanceof ApiError ? first : new ApiError(first?.message || 'Prévisions indisponibles');
   }
-  return { weather, marine, fetchedAt: Number.isFinite(fetchedAt) ? fetchedAt : Date.now(), stale, errors, marineDays };
+  return { weather, marine, extended, fetchedAt: Number.isFinite(fetchedAt) ? fetchedAt : Date.now(), stale, errors, marineDays };
 }

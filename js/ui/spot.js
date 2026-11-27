@@ -196,8 +196,18 @@ function tableCard(spot, s, model, dayIndex, mode) {
     </div>
     ${tableLegend(s)}
     <div class="fc-scroll" tabindex="0" aria-label="Tableau des prévisions, défilable horizontalement">${forecastTable(spot, s, model, { mode, dayIndex })}</div>
-    <p class="fc-note">« Vagues » = hauteur estimée au bord, calculée à partir de la houle du large, de sa direction, de sa période et de l'abri du spot. La note tient compte du vent par rapport à l'orientation de la plage et de la marée préférée du spot.</p>
+    <p class="fc-note">« Vagues » = hauteur estimée au bord, calculée à partir de la houle du large, de sa direction, de sa période et de l'abri du spot. La note tient compte du vent par rapport à l'orientation de la plage et de la marée préférée du spot.${relayNote(s, model)}</p>
   </section>`;
+}
+
+/** Signale à partir de quand la houle vient du modèle de relais (moins précis). */
+function relayNote(s, model) {
+  if (s.extFrom == null) return '';
+  const day = model.days.find((d) => d.start <= s.extFrom && s.extFrom <= d.end);
+  if (!day) return '';
+  const hour = model.hours[s.extFrom].hour;
+  const when = `${day.long.charAt(0).toLowerCase()}${day.long.slice(1)}${hour ? ` à ${hour}h` : ''}`;
+  return ` À partir du ${esc(when)}, la houle vient du modèle américain GFS-Wave, moins fin : à prendre comme une tendance.`;
 }
 
 function infoCard(spot) {

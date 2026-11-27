@@ -1,7 +1,8 @@
 # Vérifications à chaque push sur main : tests unitaires, vraies données
 # Open-Meteo pour les 124 spots, et le site dans un vrai Chrome (carte comprise).
 # Les résultats s'affichent sur la page du workflow (onglet Actions) ; les captures
-# d'écran sont gardées 7 jours dans l'artefact « captures ».
+# d'écran sont gardées 7 jours dans l'artefact « captures ». Lancé à la main, il peut
+# aussi les publier sur une branche « captures » pour les regarder directement sur GitHub.
 name: Vérifications
 
 on:
@@ -9,6 +10,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      captures_sur_branche:
+        description: Publier aussi les captures sur la branche « captures »
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -31,6 +37,8 @@ jobs:
   navigateur:
     name: Site dans Chrome
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # seulement pour la branche « captures », sur demande
     steps:
       - uses: actions/checkout@v6
       - name: Installer Playwright
@@ -49,3 +57,12 @@ jobs:
           name: captures
           path: captures
           retention-days: 7
+      - name: Publier les captures sur la branche « captures »
+        if: always() && inputs.captures_sur_branche
+        run: |
+          cd captures
+          git init -q -b captures
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -qm "Captures de ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" captures

@@ -26,10 +26,18 @@ function align(axis, times, values) {
 }
 
 function firstResponse(fetched) {
-  for (const r of fetched.weather.values()) if (r?.hourly?.time?.length) return r;
-  for (const r of fetched.marine.values()) if (r?.hourly?.time?.length) return r;
+  for (const map of [fetched.weather, fetched.marine, fetched.extended]) {
+    for (const r of map?.values() ?? []) if (r?.hourly?.time?.length) return r;
+  }
   return null;
 }
+
+// Variables de vagues reprises du modèle de relais (GFS-Wave) quand le modèle principal manque.
+const WAVE_KEYS = [
+  ['hs', 'wave_height'], ['dir', 'wave_direction'], ['tp', 'wave_period'],
+  ['hsw', 'swell_wave_height'], ['dsw', 'swell_wave_direction'], ['tsw', 'swell_wave_peak_period'],
+  ['hww', 'wind_wave_height'], ['dww', 'wind_wave_direction'], ['tww', 'wind_wave_period'],
+];
 
 export function nowIndex(times, nowSec = Date.now() / 1000) {
   let idx = -1;
@@ -60,8 +68,17 @@ export function buildModel(spots, fetched, nowMs = Date.now()) {
   const ctx = { times, hours, days, now };
   const bySpot = new Map();
   for (const spot of spots) {
-    bySpot.set(spot.id, buildSpot(spot, fetched.weather.get(spot.id), fetched.marine.get(spot.id), ctx));
+    const id = spot.id;
+    bySpot.set(id, buildSpot(spot, fetched.weather.get(id), fetched.marine.get(id), fetched.extended?.get(id), ctx));
   }
+
+  // Nombre de jours où la houle est connue pour la majorité des spots.
+  let waveDays = 0;
+  days.forEach((d, i) => {
+    let ok = 0;
+    for (const s of bySpot.values()) if (s.daily[i]?.available) ok++;
+    if (ok >= bySpot.size / 2) waveDays = i + 1;
+  });
 
   return {
     times,
@@ -72,19 +89,21 @@ export function buildModel(spots, fetched, nowMs = Date.now()) {
     fetchedAt: fetched.fetchedAt,
     stale: fetched.stale,
     marineDays: fetched.marineDays,
+    waveDays,
     errors: fetched.errors,
   };
 }
 
-function buildSpot(spot, w, m, ctx) {
+function buildSpot(spot, w, m, x, ctx) {
   const { times, days } = ctx;
   const N = times.length;
   const mh = m?.hourly;
+  const xh = x?.hourly;
   const wh = w?.hourly;
   const get = (block, key) => align(times, block?.time, block?.[key]);
 
   const s = {
-    hasMarine: Boolean(mh),
+    hasMarine: Boolean(mh || xh),
     hasWeather: Boolean(wh),
     hs: get(mh, 'wave_height'),
     dir: get(mh, 'wave_direction'),
@@ -106,6 +125,31 @@ function buildSpot(spot, w, m, ctx) {
   // Période de houle : période pic si disponible, sinon période moyenne.
   const tswMean = get(mh, 'swell_wave_period');
   for (let i = 0; i < N; i++) if (Number.isNaN(s.tsw[i])) s.tsw[i] = tswMean[i];
+
+  // Heures sans vagues du modèle principal (au-delà de son horizon, ou trou) : relais GFS-Wave,
+  // heure par heure et en bloc, pour ne jamais mélanger deux modèles dans une même heure.
+  s.waveModel = new Uint8Array(N); // 0 : aucune donnée · 1 : modèle principal · 2 : relais
+  s.extFrom = null;
+  const ext = xh ? Object.fromEntries(WAVE_KEYS.map(([k, v]) => [k, get(xh, v)])) : null;
+  const extMean = xh ? get(xh, 'swell_wave_period') : null;
+  for (let i = 0; i < N; i++) {
+    if (!Number.isNaN(s.hs[i]) || !Number.isNaN(s.hsw[i])) {
+      s.waveModel[i] = 1;
+      continue;
+    }
+    if (!ext || (Number.isNaN(ext.hs[i]) && Number.isNaN(ext.hsw[i]))) continue;
+    s.waveModel[i] = 2;
+    for (const [k] of WAVE_KEYS) s[k][i] = ext[k][i];
+    if (Number.isNaN(s.tsw[i])) s.tsw[i] = extMean[i];
+  }
+  // Début du relais final (après la dernière heure du modèle principal), pour l'afficher.
+  const lastMain = s.waveModel.lastIndexOf(1);
+  for (let i = lastMain + 1; i < N; i++) {
+    if (s.waveModel[i] === 2) {
+      s.extFrom = i;
+      break;
+    }
+  }
 
   // Marée.
   const sl = Array.from(s.sl, num);

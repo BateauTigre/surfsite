@@ -112,7 +112,7 @@ export const SPOTS = [
   },
   {
     id: 'siouville', name: 'Siouville-Hague', town: 'Siouville-Hague', region: 'normandie', dept: 'Manche',
-    lat: 49.559, lon: -1.848, facing: 295, swell: [285, 50], offshore: 110, type: 'beach', bottom: 'sable',
+    lat: 49.5652, lon: -1.8475, facing: 295, swell: [285, 50], offshore: 110, type: 'beach', bottom: 'sable',
     level: 2, tide: 'low-mid', size: [0.6, 1.0, 2.0, 3.0], quality: 3, hazards: ['courants'],
     desc: 'Le spot le plus réputé de Normandie, labellisé ville de surf. Abrité des vents de S et SO par le cap, il devient creux à marée basse par bonne houle d\'hiver. Le courant peut être violent.',
     aka: ['Siouville', 'Cotentin', 'Biville'],
@@ -147,7 +147,7 @@ export const SPOTS = [
   },
   {
     id: 'sainte-adresse', name: 'Sainte-Adresse', town: 'Le Havre', region: 'normandie', dept: 'Seine-Maritime',
-    lat: 49.504, lon: 0.083, facing: 260, swell: [275, 45], offshore: 80, type: 'beach', bottom: 'galets',
+    lat: 49.5026, lon: 0.0803, facing: 260, swell: [275, 45], offshore: 80, type: 'beach', bottom: 'galets',
     level: 2, tide: 'mid-high', size: [0.6, 0.9, 1.6, 2.5], quality: 2, exposure: 0.8, hazards: ['galets', 'jetee'],
     desc: 'Plage de galets du Havre, découpée par des épis. Se réveille par grosse houle d\'O et vent d\'E.',
     aka: ['Le Havre'],
@@ -221,7 +221,7 @@ export const SPOTS = [
   },
   {
     id: 'goulien', name: 'Goulien', town: 'Crozon', region: 'finistere', dept: 'Finistère',
-    lat: 48.2275, lon: -4.5545, facing: 285, swell: [285, 45], offshore: 105, type: 'beach', bottom: 'sable',
+    lat: 48.2385, lon: -4.548, facing: 285, swell: [285, 45], offshore: 105, type: 'beach', bottom: 'sable',
     level: 1, tide: 'mid', size: [0.5, 0.8, 1.6, 2.5], quality: 2, exposure: 0.8, hazards: ['courants'],
     desc: 'Anse plus abritée au nord de Lostmarc\'h : un beach break à plusieurs pics conseillé pour débuter, qui offre aussi de bonnes vagues par grosse houle.',
     aka: ['Crozon', 'Anse de Dinan', 'Kerloc\'h'],
@@ -759,7 +759,7 @@ export const SPOTS = [
   },
   {
     id: 'cenitz', name: 'Cenitz', town: 'Guéthary', region: 'pays-basque', dept: 'Pyrénées-Atlantiques',
-    lat: 43.4135, lon: -1.6235, facing: 315, swell: [300, 40], offshore: 125, type: 'reef', bottom: 'rochers',
+    lat: 43.4234, lon: -1.6207, facing: 315, swell: [300, 40], offshore: 125, type: 'reef', bottom: 'rochers',
     level: 3, tide: 'mid', size: [1.0, 1.5, 3.0, 4.0], quality: 4, hazards: ['rochers', 'puissance'],
     desc: 'Le reef de la crique de Cenitz, entre Guéthary et Saint-Jean-de-Luz : gauches et droites de qualité pour surfeurs expérimentés.',
     aka: ['Guéthary', 'Saint-Jean-de-Luz'],
@@ -873,7 +873,7 @@ export const SPOTS = [
   },
   {
     id: 'nice-castel', name: 'Le Castel', town: 'Nice', region: 'mediterranee', dept: 'Alpes-Maritimes',
-    lat: 43.6935, lon: 7.281, facing: 180, swell: [170, 50], offshore: 0, type: 'beach', bottom: 'galets',
+    lat: 43.6925, lon: 7.2795, facing: 180, swell: [170, 50], offshore: 0, type: 'beach', bottom: 'galets',
     level: 2, tide: 'all', size: [0.5, 0.8, 1.6, 2.4], quality: 2, hazards: ['galets', 'shorebreak'],
     desc: 'Vagues de galets au pied de la colline du Château, par houle de S à SE. Shorebreak marqué.',
     aka: ['Nice', 'Les Ponchettes', 'Côte d\'Azur'],
@@ -924,9 +924,9 @@ export const SPOTS = [
   },
   {
     id: 'portigliolo', name: 'Portigliolo', town: 'Belvédère-Campomoro', region: 'corse', dept: 'Corse-du-Sud',
-    lat: 41.643, lon: 8.863, facing: 260, swell: [255, 50], offshore: 80, type: 'beach', bottom: 'sable',
-    level: 1, tide: 'all', size: [0.5, 0.8, 1.6, 2.4], quality: 2, hazards: [],
-    desc: 'Longue plage du golfe de Valinco, exposée aux houles de SO.',
+    lat: 41.6465, lon: 8.8685, facing: 290, swell: [270, 45], offshore: 110, type: 'beach', bottom: 'sable',
+    level: 1, tide: 'all', size: [0.5, 0.8, 1.6, 2.4], quality: 2, hazards: ['courants'],
+    desc: 'Longue plage du golfe de Valinco, près de Propriano : droites et gauches par houle d\'ouest et vent d\'ESE. Attention aux courants.',
     aka: ['Propriano', 'Valinco'],
   },
   {

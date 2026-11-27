@@ -39,3 +39,31 @@ test('jours sans houle : non disponibles, sans planter', () => {
   assert.ok(t.daily[2].available);
   assert.equal(t.daily[12].available, false);
 });
+
+test('relais GFS-Wave : la houle couvre les 15 jours quand le modèle principal s\'arrête', () => {
+  const spots = SPOTS.filter((s) => ['la-torche', 'la-nord'].includes(s.id));
+  const weather = new Map(spots.map((s) => [s.id, weatherResponse({ windDir: s.offshore })]));
+  const marine = new Map(spots.map((s) => [s.id, marineResponse({ days: 9, dir: s.swell[0] })]));
+  const extended = new Map(spots.map((s) => [s.id, marineResponse({ days: 15, dir: s.swell[0], swell: 2.2 })]));
+  const model = buildModel(spots, { weather, marine, extended, fetchedAt: Date.now(), stale: false, errors: [], marineDays: 15 });
+  const t = model.spots.get('la-torche');
+  assert.equal(model.waveDays, 15);
+  assert.ok(t.daily[14].available, 'dernier jour disponible');
+  assert.equal(t.waveModel[0], 1, 'modèle principal au début');
+  assert.equal(t.waveModel[t.waveModel.length - 1], 2, 'relais à la fin');
+  assert.equal(model.hours[t.extFrom].hour, 0, 'relais à partir du 10e jour à minuit');
+  const near = (a, b) => Math.abs(a - b) < 1e-5;
+  assert.ok(near(t.hsw[3], marine.get('la-torche').hourly.swell_wave_height[3]), 'le modèle principal garde la priorité');
+  assert.ok(near(t.hsw[t.extFrom], extended.get('la-torche').hourly.swell_wave_height[t.extFrom]), 'valeur reprise du relais');
+});
+
+test('sans relais : le nombre de jours de houle est signalé', () => {
+  const spots = SPOTS.filter((s) => s.id === 'la-torche');
+  const model = buildModel(spots, {
+    weather: new Map([['la-torche', weatherResponse()]]),
+    marine: new Map([['la-torche', marineResponse({ days: 9 })]]),
+    fetchedAt: Date.now(), stale: false, errors: [], marineDays: 15,
+  });
+  assert.equal(model.waveDays, 9);
+  assert.equal(model.spots.get('la-torche').extFrom, null);
+});

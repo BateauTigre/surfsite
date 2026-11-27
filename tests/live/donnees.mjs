@@ -66,7 +66,7 @@ for (const spot of SPOTS) {
   // Maille marine retenue (cell_selection=sea) : loin du spot = spot mal placé ou côte mal couverte.
   if (m && Number.isFinite(m.latitude)) {
     const d = distanceKm(spot.lat, spot.lon, m.latitude, m.longitude);
-    if (d > 15) farCell.push(`${spot.name} (${spot.id}) : maille marine à ${d.toFixed(1)} km`);
+    if (d > 20) farCell.push(`${spot.name} (${spot.id}) : maille marine à ${d.toFixed(1)} km`);
   }
   // Altitude du point (modèle numérique de terrain à 90 m) : un spot doit être au bord de l'eau.
   if (w && Number.isFinite(w.elevation) && w.elevation > 35) highGround.push(`${spot.name} (${spot.id}) : ${Math.round(w.elevation)} m d'altitude`);
@@ -78,6 +78,9 @@ if (farCell.length) warnings.push(`Maille marine éloignée :\n${farCell.join('\
 if (highGround.length) warnings.push(`Spots à vérifier sur la carte (altitude élevée) :\n${highGround.join('\n')}`);
 
 const H = Object.fromEntries(Object.entries(horizons).map(([k, v]) => [k, median(v)]));
+const relay = SPOTS.filter((spot) => model.spots.get(spot.id)?.extFrom != null).length;
+if (fetched.extended.size < SPOTS.length) warnings.push(`Relais GFS-Wave : ${fetched.extended.size} réponses sur ${SPOTS.length}.`);
+if (model.waveDays < model.days.length) problems.push(`Houle disponible sur ${model.waveDays} jours seulement (sur ${model.days.length}).`);
 if (!(H.houle >= 7)) problems.push(`Horizon de houle trop court : ${H.houle?.toFixed(1)} jours.`);
 
 // Top 10 du jour, comme la page d'accueil (France entière, tous niveaux).
@@ -107,7 +110,7 @@ const dayLines = model.days.map((d) => {
 
 const summary = [
   `${SPOTS.length} spots, ${fetched.weather.size} réponses météo, ${fetched.marine.size} réponses marines, en ${elapsed} s.`,
-  `${model.days.length} jours affichés · houle sur ${fetched.marineDays} jours demandés.`,
+  `${model.days.length} jours affichés · houle connue sur ${model.waveDays} jours · relais GFS-Wave utilisé pour ${relay} spots.`,
   `Horizon médian réel : houle ${H.houle.toFixed(1)} j · vent ${H.vent.toFixed(1)} j · marée ${H.maree.toFixed(1)} j · eau ${H.eau.toFixed(1)} j.`,
 ].join('\n');
 

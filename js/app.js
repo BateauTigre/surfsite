@@ -146,7 +146,7 @@ function renderBanner() {
   }
   const notes = [];
   if (m?.errors?.length) notes.push('Une partie des prévisions n\'a pas pu être chargée : certains spots peuvent afficher des données incomplètes.');
-  if (m && m.marineDays < 15) notes.push(`La prévision de houle ne couvre que ${m.marineDays} jours aujourd'hui ; le vent reste disponible sur 15 jours.`);
+  if (m && m.waveDays < m.days.length) notes.push(`La prévision de houle ne couvre que ${m.waveDays} jours aujourd'hui ; le vent reste disponible sur ${m.days.length} jours.`);
   if (state.error && m) notes.push(`Dernière actualisation en échec (${state.error}). Les données affichées datent de ${formatClock(new Date(m.fetchedAt))}.`);
   host.innerHTML = notes.length
     ? `<div class="banner" role="status">${icon.info()}<div>${notes.map((n) => `<p>${esc(n)}</p>`).join('')}</div></div>`

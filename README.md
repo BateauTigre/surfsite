@@ -30,14 +30,17 @@ sans clé, qui redistribue les mêmes modèles que ces sites :
 
 | Donnée | Source | Horizon |
 |---|---|---|
-| Houle, mer du vent, périodes, directions | API marine : Météo-France MFWAM (≈ 8 km), ECMWF WAM, NOAA GFS-Wave | 15 jours |
+| Houle, mer du vent, périodes, directions | API marine : Météo-France MFWAM (≈ 8 km), puis NOAA GFS-Wave (≈ 25 km) en relais | 9-10 jours + relais jusqu'à 15 jours |
 | Marée (hauteur d'eau) | Météo-France SMOC (≈ 8 km) | ≈ 10 jours |
 | Température de l'eau | Météo-France | ≈ 10 jours |
 | Vent, rafales, air, ciel, lever / coucher du soleil | API météo : Météo-France AROME/ARPEGE, ECMWF IFS, NOAA GFS | 15 jours |
 
+Le modèle MFWAM s'arrête vers 9-10 jours : pour les jours suivants (et pour boucher un éventuel trou),
+la houle vient du modèle NOAA GFS-Wave, moins fin. La fiche spot indique à partir de quand.
+
 Quota gratuit Open-Meteo (par adresse IP) : 600 appels/minute, 5 000/heure, 10 000/jour. Un chargement
-complet coûte environ 260 appels « pondérés » ; les réponses sont gardées 45 minutes dans le cache du
-navigateur. Données sous licence CC BY 4.0.
+complet fait 15 requêtes (environ 420 appels « pondérés ») ; les réponses sont gardées 45 minutes dans le
+cache du navigateur. Données sous licence CC BY 4.0.
 
 ## Comment est calculée la note (0 à 5 étoiles)
 
@@ -103,6 +106,7 @@ Ne modifiez pas `gh-pages` à la main.
 
 - Ce sont des prévisions de modèles : vérifiez toujours sur place (courants, drapeaux, baïnes).
 - La marée est indicative (maille de 8 km) et disponible sur environ 10 jours.
+- Au-delà de 9-10 jours, la houle vient d'un modèle global plus grossier (GFS-Wave) : c'est une tendance.
 - Les bancs de sable bougent : un beach break peut marcher mieux ou moins bien que la note.
 
 ## Crédits
