@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Surfsite — conditions de surf en France en temps réel</title>
+  <meta name="description" content="Prévisions de surf pour 124 spots en France : houle, vent, marée, note des vagues de 0 à 5 étoiles, top 10 du jour par région, carte interactive et 15 jours de prévisions.">
+  <meta name="theme-color" content="#faf7f3">
+  <meta property="og:title" content="Surfsite — conditions de surf en France">
+  <meta property="og:description" content="Houle, vent, marée et note des vagues pour 124 spots, du Nord à la Corse.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/dm-sans-latin.woff" as="font" type="font/woff" crossorigin>
+  <link rel="preconnect" href="https://api.open-meteo.com" crossorigin>
+  <link rel="preconnect" href="https://marine-api.open-meteo.com" crossorigin>
+  <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Aller au contenu</a>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#/" aria-label="Surfsite, accueil"><span id="brand-logo"></span><span>surfsite</span></a>
+
+      <div class="search" role="search">
+        <label class="visually-hidden" for="search-input">Rechercher un spot</label>
+        <div class="search-field">
+          <span id="search-icon" aria-hidden="true"></span>
+          <input id="search-input" type="search" placeholder="Rechercher un spot, une ville…" autocomplete="off" spellcheck="false"
+            role="combobox" aria-expanded="false" aria-controls="search-results" aria-autocomplete="list">
+          <span class="kbd" aria-hidden="true">/</span>
+        </div>
+        <ul id="search-results" class="search-results" role="listbox" aria-label="Spots trouvés" hidden></ul>
+      </div>
+
+      <div class="header-status">
+        <span id="status-text" class="status-text" role="status" aria-live="polite"></span>
+        <button id="refresh-btn" class="icon-btn" type="button" aria-label="Actualiser les prévisions" title="Actualiser"></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <div id="banner" class="container"></div>
+
+    <div id="view-home" class="view">
+      <div class="container">
+        <div class="home-head">
+          <h1>Les vagues de France, spot par spot</h1>
+          <p class="lede">Houle, vent et marée pour 124 spots, du Nord à la Corse, avec une note des vagues de 0 à 5 étoiles. Choisissez un jour et une région : on vous dit où ça marche.</p>
+        </div>
+
+        <div class="controls">
+          <div id="day-picker" class="day-picker" role="group" aria-label="Choisir le jour"></div>
+          <div class="filters">
+            <label class="field">
+              <span class="field-label">Région</span>
+              <span class="select"><select id="region-select"></select><span data-chevron aria-hidden="true"></span></span>
+            </label>
+            <label class="field">
+              <span class="field-label">Mon niveau</span>
+              <span class="select">
+                <select id="level-select">
+                  <option value="0">Tous les niveaux</option>
+                  <option value="1">Débutant</option>
+                  <option value="2">Intermédiaire</option>
+                  <option value="3">Confirmé</option>
+                  <option value="4">Expert</option>
+                </select><span data-chevron aria-hidden="true"></span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="home-grid">
+          <section class="panel" aria-labelledby="top10-title">
+            <div class="panel-head">
+              <h2 id="top10-title">Top 10 du jour</h2>
+              <p id="top10-sub" class="panel-sub"></p>
+            </div>
+            <ol id="top10-list" class="rank-list" aria-live="polite"></ol>
+          </section>
+
+          <section class="panel map-panel" aria-labelledby="map-title">
+            <div class="panel-head">
+              <h2 id="map-title">Carte des spots</h2>
+              <p class="map-legend" aria-label="Légende : couleur selon la note du jour">
+                <span>Note du jour</span>
+                <span class="lg-swatch" style="background:var(--r0);color:var(--ink-2)">0</span>
+                <span class="lg-swatch" style="background:var(--r1);color:var(--ink)">1</span>
+                <span class="lg-swatch" style="background:var(--r2)">2</span>
+                <span class="lg-swatch" style="background:var(--r3)">3</span>
+                <span class="lg-swatch" style="background:var(--r4)">4</span>
+                <span class="lg-swatch" style="background:var(--r5)">5</span>
+              </p>
+            </div>
+            <div id="map" class="map" role="region" aria-label="Carte interactive des spots de surf. Les mêmes spots sont listés plus bas."></div>
+          </section>
+        </div>
+
+        <section class="panel all-spots" aria-labelledby="all-title">
+          <div class="panel-head">
+            <h2 id="all-title">Tous les spots</h2>
+            <p id="all-sub" class="panel-sub"></p>
+          </div>
+          <div id="spot-list"></div>
+        </section>
+      </div>
+    </div>
+
+    <div id="view-spot" class="view" hidden></div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <h2>D'où viennent les données ?</h2>
+        <p>Houle, marée et température de l'eau : <a href="https://open-meteo.com/en/docs/marine-weather-api" rel="noopener">API marine Open-Meteo</a> (modèles Météo-France MFWAM et SMOC, ECMWF WAM, NOAA GFS-Wave). Vent, air et ciel : <a href="https://open-meteo.com/" rel="noopener">API météo Open-Meteo</a> (Météo-France AROME/ARPEGE, ECMWF IFS, NOAA GFS). Données sous licence CC BY 4.0, actualisées automatiquement toutes les heures.</p>
+        <p>Carte : <a href="https://openfreemap.org" rel="noopener">OpenFreeMap</a> © OpenMapTiles, données © contributeurs OpenStreetMap. Fiches des spots compilées à partir de guides de surf publics (Wannasurf, Surf-Forecast, Surf-Report, offices de tourisme).</p>
+        <p>Les prévisions sont indicatives. Renseignez-vous sur place (baignade, courants, drapeaux) et ne surfez jamais seul au-dessus de votre niveau.</p>
+      </div>
+      <div>
+        <details>
+          <summary>Comment est calculée la note des vagues ?</summary>
+          <ol>
+            <li>On garde la part de houle qui entre vraiment au spot, selon sa fenêtre de houle et son abri.</li>
+            <li>On estime la hauteur des vagues au bord (une houle longue grossit en arrivant).</li>
+            <li>On compare cette taille à celle où le spot fonctionne bien.</li>
+            <li>On pondère par la période, le vent par rapport à la plage (offshore = vagues lisses, onshore = vagues hachées) et la marée préférée du spot.</li>
+            <li>La qualité propre du spot fixe le plafond : seuls les meilleurs spots peuvent atteindre 5 étoiles.</li>
+          </ol>
+          <p>La note du jour est la moyenne du meilleur créneau de 3 heures entre le lever et le coucher du soleil.</p>
+        </details>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
