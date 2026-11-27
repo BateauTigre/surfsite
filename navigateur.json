@@ -1,0 +1,64 @@
+{
+  "console": [],
+  "network": [],
+  "failed": [],
+  "checks": {
+    "Top 10": {
+      "ok": true,
+      "detail": "10 spots, affiché en 2.6 s"
+    },
+    "Statut": {
+      "ok": true,
+      "detail": "Mis à jour à 08:34"
+    },
+    "15 jours": {
+      "ok": true,
+      "detail": "15 jours"
+    },
+    "Carte": {
+      "ok": true,
+      "detail": "MapLibre chargé"
+    },
+    "Pastilles": {
+      "ok": true,
+      "detail": "124 pastilles"
+    },
+    "Fond de carte": {
+      "ok": true,
+      "detail": "13 réponses OpenFreeMap, 0 en erreur"
+    },
+    "Fenêtre de la carte": {
+      "ok": true,
+      "detail": "La Torche · Plomeur · Finistère · 4,2/5 · Vagues · 1,6–2,2 m · · 15 s · Pas de vent · 3 km/h · ESE · Voir la fiche du sp"
+    },
+    "Zoom la-nord": {
+      "ok": true,
+      "detail": "niveau near"
+    },
+    "Zoom la-torche": {
+      "ok": true,
+      "detail": "niveau near"
+    },
+    "Zoom cote-des-basques": {
+      "ok": true,
+      "detail": "niveau near"
+    },
+    "Zoom etretat": {
+      "ok": true,
+      "detail": "niveau near"
+    },
+    "Fiche spot": {
+      "ok": true,
+      "detail": "17 colonnes, courbe de marée oui"
+    },
+    "Recherche": {
+      "ok": true,
+      "detail": "5 résultats pour « hossegor »"
+    },
+    "Mobile sans défilement horizontal": {
+      "ok": true,
+      "detail": "0 px de trop"
+    }
+  },
+  "problems": []
+}
