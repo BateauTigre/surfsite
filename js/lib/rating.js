@@ -243,8 +243,9 @@ export function wetsuitFor(sst) {
   if (sst >= 23) return { suit: 'Lycra ou shorty', extras: '' };
   if (sst >= 20) return { suit: 'Shorty ou 2 mm', extras: '' };
   if (sst >= 17) return { suit: '3/2 mm', extras: '' };
-  if (sst >= 14) return { suit: '4/3 mm', extras: 'chaussons conseillés' };
-  if (sst >= 11) return { suit: '5/4 mm', extras: 'chaussons et gants' };
+  if (sst >= 15) return { suit: '4/3 mm', extras: '' };
+  if (sst >= 13) return { suit: '4/3 mm', extras: 'chaussons conseillés' };
+  if (sst >= 10.5) return { suit: '5/4 mm', extras: 'chaussons et gants' };
   return { suit: '5/4 ou 6/5 mm', extras: 'chaussons, gants et cagoule' };
 }
 

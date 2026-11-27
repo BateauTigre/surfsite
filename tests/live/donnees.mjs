@@ -27,12 +27,41 @@ function annotate(kind, title, message) {
 const problems = []; // bloquants
 const warnings = []; // à surveiller
 
+// Une coupure réseau entre GitHub et Open-Meteo n'est pas un défaut du site : on retente,
+// puis on signale la vérification comme incomplète sans la faire échouer. Une erreur HTTP
+// (paramètre refusé, modèle inconnu…) reste, elle, un vrai problème.
+const isNetwork = (err) => !err?.status;
+async function download() {
+  try {
+    return { fetched: await fetchForecasts(SPOTS, { force: true }) };
+  } catch (error) {
+    return { error };
+  }
+}
 const t0 = Date.now();
-const fetched = await fetchForecasts(SPOTS, { force: true });
+let run = await download();
+if (run.error || run.fetched.errors.length) {
+  await new Promise((resolve) => setTimeout(resolve, 30_000));
+  run = await download();
+}
 const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+if (run.error) {
+  if (isNetwork(run.error)) {
+    annotate('warning', 'Vérification incomplète', `Open-Meteo injoignable depuis GitHub Actions (${run.error.message}).`);
+    process.exit(0);
+  }
+  annotate('error', 'Problème', `Open-Meteo refuse les requêtes du site : ${run.error.message}`);
+  process.exit(1);
+}
+const { fetched } = run;
 const model = buildModel(SPOTS, fetched, Date.now());
+const unreachable = fetched.errors.length > 0 && fetched.errors.every((e) => isNetwork(e.error));
 
-for (const e of fetched.errors) warnings.push(`Lot ${e.kind} en erreur : ${e.error?.message || e.error}`);
+for (const e of fetched.errors) {
+  const msg = `Lot ${e.kind} en erreur : ${e.error?.message || e.error}`;
+  if (isNetwork(e.error)) warnings.push(`${msg} (coupure réseau côté GitHub, vérification incomplète)`);
+  else problems.push(msg);
+}
 if (fetched.marineDays < FORECAST_DAYS) warnings.push(`Houle limitée à ${fetched.marineDays} jours au lieu de ${FORECAST_DAYS}.`);
 
 // Horizon réel d'une série : dernier pas de temps renseigné, en jours depuis minuit.
@@ -72,16 +101,18 @@ for (const spot of SPOTS) {
   if (w && Number.isFinite(w.elevation) && w.elevation > 35) highGround.push(`${spot.name} (${spot.id}) : ${Math.round(w.elevation)} m d'altitude`);
 }
 
-if (missingMarine.length) problems.push(`Pas de données marines pour ${missingMarine.length} spot(s) : ${missingMarine.join(', ')}`);
-if (missingWeather.length) problems.push(`Pas de données météo pour ${missingWeather.length} spot(s) : ${missingWeather.join(', ')}`);
+// Données manquantes à cause d'une coupure réseau : signalé, sans faire échouer.
+const missing = unreachable ? warnings : problems;
+if (missingMarine.length) missing.push(`Pas de données marines pour ${missingMarine.length} spot(s) : ${missingMarine.join(', ')}`);
+if (missingWeather.length) missing.push(`Pas de données météo pour ${missingWeather.length} spot(s) : ${missingWeather.join(', ')}`);
 if (farCell.length) warnings.push(`Maille marine éloignée :\n${farCell.join('\n')}`);
 if (highGround.length) warnings.push(`Spots à vérifier sur la carte (altitude élevée) :\n${highGround.join('\n')}`);
 
 const H = Object.fromEntries(Object.entries(horizons).map(([k, v]) => [k, median(v)]));
 const relay = SPOTS.filter((spot) => model.spots.get(spot.id)?.extFrom != null).length;
 if (fetched.extended.size < SPOTS.length) warnings.push(`Relais GFS-Wave : ${fetched.extended.size} réponses sur ${SPOTS.length}.`);
-if (model.waveDays < model.days.length) problems.push(`Houle disponible sur ${model.waveDays} jours seulement (sur ${model.days.length}).`);
-if (!(H.houle >= 7)) problems.push(`Horizon de houle trop court : ${H.houle?.toFixed(1)} jours.`);
+if (model.waveDays < model.days.length) missing.push(`Houle disponible sur ${model.waveDays} jours seulement (sur ${model.days.length}).`);
+if (!(H.houle >= 7)) missing.push(`Horizon de houle trop court : ${H.houle?.toFixed(1)} jours.`);
 
 // Top 10 du jour, comme la page d'accueil (France entière, tous niveaux).
 function top(dayIndex, spots = SPOTS) {
@@ -92,7 +123,7 @@ function top(dayIndex, spots = SPOTS) {
     .slice(0, 10);
 }
 const today = top(0);
-if (today.length < 10) problems.push(`Top 10 du jour incomplet : ${today.length} spot(s).`);
+if (today.length < 10) missing.push(`Top 10 du jour incomplet : ${today.length} spot(s).`);
 const topLines = today.map(
   ({ spot, day }, k) =>
     `${k + 1}. ${spot.name} (${spot.town}) ${fmtScore(day.score)}/5 · ${fmtSurfRange(day.surf)} · ${model.hours[day.start].hour}h–${model.hours[day.end].hour + 1}h`,

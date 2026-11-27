@@ -27,14 +27,25 @@ def annotate(kind, title, message):
 
 def main(base, out, prepare=None, executable=None):
     os.makedirs(out, exist_ok=True)
-    report = {"console": [], "failed": [], "checks": {}, "problems": []}
+    report = {"console": [], "network": [], "failed": [], "checks": {}, "problems": []}
     tiles = {"ok": 0, "ko": 0}
 
     def shot(page, name, **kw):
         page.screenshot(path=os.path.join(out, f"{name}.png"), **kw)
 
+    def on_console(m):
+        if m.type not in ("error", "warning"):
+            return
+        url = (m.location or {}).get("url", "")
+        # Coupure réseau entre GitHub et Open-Meteo : pas un défaut du site (le site affiche
+        # alors un bandeau et les données disponibles). Une erreur HTTP reste comptée.
+        if m.text.startswith("Failed to load resource: net::") and "open-meteo.com" in url:
+            report["network"].append(f"{m.text} ({url[:90]})")
+            return
+        report["console"].append(f"{m.type}: {m.text}")
+
     def watch(page):
-        page.on("console", lambda m: report["console"].append(f"{m.type}: {m.text}") if m.type in ("error", "warning") else None)
+        page.on("console", on_console)
         page.on("pageerror", lambda e: report["console"].append(f"pageerror: {e}"))
         # Les tuiles annulées pendant un zoom (net::ERR_ABORTED) sont normales.
         page.on("requestfailed", lambda r: None if "ERR_ABORTED" in (r.failure or "") else report["failed"].append(f"{r.url[:140]} ({r.failure})"))
@@ -182,6 +193,8 @@ def main(base, out, prepare=None, executable=None):
     annotate("notice", "Navigateur", "\n".join(lines))
     if report["console"]:
         annotate("warning", "Console", "\n".join(report["console"][:25]))
+    if report["network"]:
+        annotate("warning", "Open-Meteo injoignable par moments (réseau GitHub)", "\n".join(report["network"][:10]))
     if report["failed"]:
         annotate("warning", "Requêtes en échec", "\n".join(report["failed"][:25]))
     for prob in report["problems"]:

@@ -953,13 +953,22 @@ svg {
   box-shadow: 0 0 0 1px var(--border);
 }
 
+.map[data-zoom='near'] .marker.name-hidden .mk-name {
+  display: none;
+}
+
+.map[data-zoom='near'] .marker.name-hidden:hover .mk-name,
+.map[data-zoom='near'] .marker.name-hidden.is-active .mk-name {
+  display: block;
+}
+
 .maplibregl-popup.spot-popup .maplibregl-popup-content {
   padding: var(--s3) var(--s4) var(--s3);
   border-radius: var(--radius);
   box-shadow: var(--shadow-float);
   font-family: var(--font);
   color: var(--ink);
-  min-width: 220px;
+  min-width: 240px;
 }
 
 .maplibregl-popup.spot-popup .maplibregl-popup-close-button {
@@ -991,8 +1000,17 @@ svg {
 
 .popup-stats div {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 2px 6px;
+}
+
+.popup-wind {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-2);
+  white-space: nowrap;
 }
 
 .popup .btn {

@@ -120,6 +120,8 @@ export async function initMap(el, spots, { open, getData }) {
   map.touchZoomRotate.disableRotation();
   map.keyboard.disableRotation();
   map.addControl(new ml.NavigationControl({ showCompass: false }), 'top-right');
+  // Noms de lieux en français quand la carte les connaît (sinon le nom local).
+  map.on('style.load', () => localizeLabels(map));
   map.on('error', (e) => {
     // Une tuile manquante ne doit pas casser la page ; on garde une trace discrète.
     if (e?.error) console.warn('[carte]', e.error.message || e.error);
@@ -149,8 +151,49 @@ export async function initMap(el, spots, { open, getData }) {
     el.dataset.zoom = zoomBand(map.getZoom());
   };
   map.on('zoom', applyZoom);
+  map.on('moveend', declutterNames);
   applyZoom();
   return true;
+}
+
+function localizeLabels(m) {
+  for (const layer of m.getStyle()?.layers ?? []) {
+    if (layer.type !== 'symbol') continue;
+    const field = m.getLayoutProperty(layer.id, 'text-field');
+    if (!field || !JSON.stringify(field).includes('name')) continue;
+    try {
+      m.setLayoutProperty(layer.id, 'text-field', ['coalesce', ['get', 'name:fr'], ['get', 'name']]);
+    } catch {
+      // couche atypique : on garde son libellé d'origine
+    }
+  }
+}
+
+/**
+ * De près, chaque pastille affiche le nom du spot. Quand des noms se chevauchent ou
+ * recouvrent une autre pastille, on ne garde que les mieux notés (survol = nom visible).
+ */
+function declutterNames() {
+  if (!map || container?.dataset.zoom !== 'near') return;
+  for (const m of markers.values()) m.el.classList.remove('name-hidden');
+  const view = container.getBoundingClientRect();
+  const items = [];
+  for (const m of markers.values()) {
+    const dot = m.el.getBoundingClientRect();
+    if (dot.right < view.left || dot.left > view.right || dot.bottom < view.top || dot.top > view.bottom) continue;
+    const name = m.el.querySelector('.mk-name').getBoundingClientRect();
+    const prio = (m.el.classList.contains('is-active') ? 100 : 0) + Number(m.el.dataset.r) * 10 - (m.el.classList.contains('is-dim') ? 50 : 0);
+    items.push({ m, dot, name, prio });
+  }
+  items.sort((a, b) => b.prio - a.prio);
+  const overlap = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+  const placed = [];
+  for (const it of items) {
+    const blocked =
+      placed.some((r) => overlap(it.name, r)) || items.some((o) => o !== it && overlap(it.name, o.dot));
+    if (blocked) it.m.el.classList.add('name-hidden');
+    else placed.push(it.name);
+  }
 }
 
 function setActive(id) {
@@ -169,7 +212,7 @@ function popupContent(spot, info) {
     stats = `<div class="popup-stats">
       <div>${starsSvg(day.stars, 14)} <strong>${fmtScore(day.score)}/5</strong></div>
       <div>Vagues <strong>${fmtSurfRange(day.surf)}</strong> · ${fmtInt(day.period)} s</div>
-      <div><span class="wind-dot" data-v="${wc}"></span>Vent ${fmtInt(day.ws)} km/h ${dirArrow(day.wd, 14)} ${compass(day.wd)} · ${esc(WIND_LABELS[day.windCat] || '')}</div>
+      <div><span class="wind-dot" data-v="${wc}"></span><span>${esc(WIND_LABELS[day.windCat] || 'Vent')}</span><span class="popup-wind">${fmtInt(day.ws)} km/h ${dirArrow(day.wd, 14)} ${compass(day.wd)}</span></div>
     </div>`;
   } else if (info?.day && !info.day.available) {
     stats = '<div class="popup-stats"><div class="muted">Pas de prévision de houle pour ce jour.</div></div>';
@@ -202,6 +245,7 @@ export function updateMarkers(getDay, isVisible) {
     m.el.setAttribute('aria-label', label);
   }
   if (popup?.isOpen() && activeId) openPopup(activeId);
+  declutterNames();
 }
 
 export function fitSpots(spots) {
