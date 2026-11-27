@@ -29,6 +29,7 @@ export function renderDayPicker(host, days, selected, bestFor, { label = 'Choisi
 }
 
 function windLine(day) {
+  if (!Number.isFinite(day.ws)) return '<span class="muted">Vent indisponible</span>';
   const wc = windClass(day.windF);
   return `<span><span class="wind-dot" data-v="${wc}" aria-hidden="true"></span>${esc(WIND_LABELS[day.windCat] || 'Vent')} ${fmtInt(day.ws)} km/h ${dirArrow(day.wd, 13)}<span class="visually-hidden">venant du ${esc(compass(day.wd))}</span></span>`;
 }

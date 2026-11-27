@@ -217,7 +217,11 @@ function popupContent(spot, info) {
     stats = `<div class="popup-stats">
       <div>${starsSvg(day.stars, 14)} <strong>${fmtScore(day.score)}/5</strong></div>
       <div>Vagues <strong>${fmtSurfRange(day.surf)}</strong> · ${fmtInt(day.period)} s</div>
-      <div><span class="wind-dot" data-v="${wc}"></span><span>${esc(WIND_LABELS[day.windCat] || 'Vent')}</span><span class="popup-wind">${fmtInt(day.ws)} km/h ${dirArrow(day.wd, 14)} ${compass(day.wd)}</span></div>
+      ${
+        Number.isFinite(day.ws)
+          ? `<div><span class="wind-dot" data-v="${wc}"></span><span>${esc(WIND_LABELS[day.windCat] || 'Vent')}</span><span class="popup-wind">${fmtInt(day.ws)} km/h ${dirArrow(day.wd, 14)} ${compass(day.wd)}</span></div>`
+          : '<div class="muted">Vent indisponible pour le moment</div>'
+      }
     </div>`;
   } else if (info?.day && !info.day.available) {
     stats = '<div class="popup-stats"><div class="muted">Pas de prévision de houle pour ce jour.</div></div>';

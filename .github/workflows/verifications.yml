@@ -23,6 +23,7 @@ jobs:
   tests:
     name: Tests unitaires
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
       - run: npm test
@@ -30,6 +31,7 @@ jobs:
   donnees:
     name: Données réelles (Open-Meteo)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
       - run: node tests/live/donnees.mjs rapport
@@ -37,6 +39,7 @@ jobs:
   navigateur:
     name: Site dans Chrome
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write # seulement pour la branche « captures », sur demande
     steps:

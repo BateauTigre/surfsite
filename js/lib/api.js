@@ -27,9 +27,9 @@ export const WEATHER_HOURLY = ['wind_speed_10m', 'wind_direction_10m', 'wind_gus
 export const WEATHER_DAILY = ['sunrise', 'sunset'];
 
 const BATCH_SIZE = 25;
-const CONCURRENCY = 4;
+const CONCURRENCY = 6; // toutes les requêtes météo partent ensemble : un hôte lent ne bloque pas les autres
 const CACHE_NAME = 'surfsite-forecast-v1';
-const TIMEOUT_MS = 15_000;
+const TIMEOUT_MS = 12_000;
 export const MAX_AGE_MS = 45 * 60 * 1000;
 
 export class ApiError extends Error {
