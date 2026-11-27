@@ -1,0 +1,29 @@
+# Publication du site.
+# GitHub Pages sert la branche gh-pages : à chaque push sur main, ce workflow
+# la remet au niveau de main. Ne modifiez pas gh-pages à la main.
+name: Publication
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publication
+  cancel-in-progress: false
+
+jobs:
+  publier:
+    name: Recopier main vers gh-pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mettre gh-pages au niveau de main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X PATCH "repos/${{ github.repository }}/git/refs/heads/gh-pages" \
+            -f sha="${{ github.sha }}" -F force=true --silent
+          echo "Site : https://bateautigre.github.io/surfsite/ (en ligne une minute plus tard)"

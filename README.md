@@ -74,6 +74,11 @@ python3 -m http.server 8000
 
 Tests (Node 20 ou plus) : `npm test`.
 
+À chaque push sur `main`, GitHub Actions (workflow « Vérifications ») relance ces tests,
+télécharge les vraies prévisions des 124 spots et ouvre le site dans Chrome, carte comprise.
+Les résultats s'affichent dans l'onglet **Actions**, avec des captures d'écran.
+Le contrôle des données se lance aussi en local (accès Internet requis) : `node tests/live/donnees.mjs`.
+
 ## Structure
 
 ```
@@ -84,11 +89,15 @@ js/data/spots.js      base des 124 spots
 js/lib/               API Open-Meteo, modèle de données, note, marée, recherche
 js/ui/                accueil, carte, fiche spot, tableau horaire, courbe de marée
 tests/                tests unitaires (données, note, marée, recherche, modèle)
+tests/live/           contrôles avec les vraies données et un vrai navigateur
+.github/workflows/    publication du site et vérifications automatiques
 ```
 
 ## Déploiement
 
-GitHub Pages, publié depuis la branche `main` (racine). Chaque push met le site à jour en une minute environ.
+GitHub Pages sert la branche `gh-pages`. À chaque push sur `main`, le workflow « Publication »
+la remet au niveau de `main` : modifiez toujours `main`, le site suit en une à deux minutes.
+Ne modifiez pas `gh-pages` à la main.
 
 ## Limites
 

@@ -1,0 +1,51 @@
+# Vérifications à chaque push sur main : tests unitaires, vraies données
+# Open-Meteo pour les 124 spots, et le site dans un vrai Chrome (carte comprise).
+# Les résultats s'affichent sur la page du workflow (onglet Actions) ; les captures
+# d'écran sont gardées 7 jours dans l'artefact « captures ».
+name: Vérifications
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Tests unitaires
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: npm test
+
+  donnees:
+    name: Données réelles (Open-Meteo)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: node tests/live/donnees.mjs rapport
+
+  navigateur:
+    name: Site dans Chrome
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Installer Playwright
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet playwright
+      - name: Tester le site
+        run: |
+          python3 -m http.server 8000 --bind 127.0.0.1 > "$RUNNER_TEMP/serveur.log" 2>&1 &
+          sleep 1
+          "$RUNNER_TEMP/venv/bin/python" tests/live/navigateur.py http://127.0.0.1:8000/ captures
+      - name: Garder les captures
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: captures
+          path: captures
+          retention-days: 7
