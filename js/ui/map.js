@@ -182,7 +182,12 @@ function declutterNames() {
     const dot = m.el.getBoundingClientRect();
     if (dot.right < view.left || dot.left > view.right || dot.bottom < view.top || dot.top > view.bottom) continue;
     const name = m.el.querySelector('.mk-name').getBoundingClientRect();
-    const prio = (m.el.classList.contains('is-active') ? 100 : 0) + Number(m.el.dataset.r) * 10 - (m.el.classList.contains('is-dim') ? 50 : 0);
+    // Priorité : spot ouvert, puis note du jour, puis réputation du spot.
+    const prio =
+      (m.el.classList.contains('is-active') ? 100 : 0) +
+      Number(m.el.dataset.r) * 10 +
+      (m.spot.quality ?? 0) -
+      (m.el.classList.contains('is-dim') ? 50 : 0);
     items.push({ m, dot, name, prio });
   }
   items.sort((a, b) => b.prio - a.prio);

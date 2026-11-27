@@ -102,7 +102,7 @@ function conditionTiles(spot, s, model, i, title) {
   const t2m = v(s.t2m, i);
   const tiles = [
     { label: 'Vagues', ic: icon.wave(14), value: fmtSurfRange(S), detail: hsw != null ? `Houle ${fmt(hsw)} m · ${fmtInt(tsw)} s · ${compass(dsw)}` : 'Pas de donnée de houle' },
-    { label: 'Vent', ic: icon.wind(14), value: ws != null ? `${fmtInt(ws)} km/h ${dirArrow(wd, 18)}<span class="visually-hidden">du ${esc(compassLong(wd))}</span>` : '–', detail: ws != null ? `${esc(WIND_LABELS[cat] || '')} · ${compass(wd)} · rafales ${fmtInt(wg)}` : '', raw: true },
+    { label: 'Vent', ic: icon.wind(14), value: ws != null ? `${fmtInt(ws)} km/h ${dirArrow(wd, 18)}<span class="visually-hidden">du ${esc(compassLong(wd))}</span>` : '–', detail: ws != null ? `${esc(WIND_LABELS[cat] || '')} · ${compass(wd)} · rafales&nbsp;${fmtInt(wg)}` : '', raw: true },
     { label: 'Marée', ic: icon.tide(14), value: tide.value, detail: tide.detail },
     { label: 'Eau', ic: icon.drop(14), value: sst != null ? `${fmtInt(sst)} °C` : '–', detail: suit ? `Combi ${suit.suit}${suit.extras ? `, ${suit.extras}` : ''}` : '' },
     { label: 'Air', ic: icon.thermo(14), value: t2m != null ? `${fmtInt(t2m)} °C ${weatherIcon(code, false, 20)}` : '–', detail: weatherWord(code), raw: true },
